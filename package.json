@@ -1,0 +1,25 @@
+{
+  "name": "oidc-provider-types",
+  "version": "1.0.0",
+  "description": "",
+  "main": "instance-provider.js",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/koa-route": "^3.2.4",
+    "@types/node": "^10.12.18"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shayim/oidc-provider-types.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shayim/oidc-provider-types/issues"
+  },
+  "homepage": "https://github.com/shayim/oidc-provider-types#readme"
+}

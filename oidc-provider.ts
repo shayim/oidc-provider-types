@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import * as Koa from 'koa'
 
 interface IConfiguration {
   acrValues?: string[]
@@ -11,7 +12,7 @@ interface IConfiguration {
     short?: { secure?: boolean; signed?: boolean; httpOnly?: boolean; maxAge?: number }
     keys?: string[]
   }
-  discovery?
+
   dynamicScopes: string[]
   extraParams?: string[] | Set<string>
   features?: IConfigurationFeatures
@@ -41,17 +42,46 @@ interface IConfiguration {
   }
   interactionUrl(ctx, interaction): string
   prompts?: ('consent' | 'login' | 'none')[]
+  routes: {
+    authorization?
+    certificates?
+    check_session?
+    code_verification?
+    device_authorization?
+    end_session?
+    introspection?
+    registration?
+    revocation?
+    token?
+    userinfo?
+  }
   scopes: ('openid' | 'offline_access')[]
   subjectTypes?: ('public' | 'pairwise')[]
 }
 
 interface IConfigurationFeatures {
-  deviceFlow?: { charset?: 'base-20' | 'digits'; mask?: '-' | '*' | ' ' }
-  introspection: boolean
-  jwtIntrospection: boolean
-  pkce: boolean | { supportedMethods: ('plain' | 'S256')[] }
-  registration: boolean | { policies; initialAccessToken }
-  registrationManagement: boolean
+  alwaysIssueRefresh?: boolean
+  backchannelLogout?: boolean
+  certificateBoundAccessTokens?: boolean
+  deviceFlow?: boolean | { charset?: 'base-20' | 'digits'; mask?: '-' | '*' | ' ' }
+  devInteractions?: boolean
+  discovery?:
+    | boolean
+    | {
+        acr_values_supported?
+        claim_types_supported?: ('normal' | 'aggregated' | 'distributed')[]
+      }
+  introspection?: boolean
+  jwtIntrospection?: boolean
+  oauthNativeApps?: boolean
+  pkce?: boolean | { supportedMethods: ('plain' | 'S256')[] }
+  registration?: boolean | { policies; initialAccessToken }
+  registrationManagement?: boolean
+  requestUri?: boolean | { requireRequestUriRegistration: false }
+}
+
+interface IProvider {
+  defaultHttpOptions: { timeout?: number; headers?: {} }
 }
 
 interface IAdapter {
@@ -190,15 +220,21 @@ interface IInteractionResult {
 
 declare class Provider extends EventEmitter {
   constructor(issuer: string, setup: IConfiguration)
+  DeviceCode
   intialize(setup: { adapter?: IAdapter; clients?: IClient[]; keystore? }): Promise<void>
   interactionDetails(req)
   interactionFinished(req, res, result: IInteractionResult)
   interactionResult(req, res, result)
+  pathFor(name: string, mountPath: string, opts: {}): string
   setProviderSession(
     req,
     res,
     payload: { account: string; ts: number; remember: boolean; clients: IClient[]; meta }
   )
+  registerGrantType(name, handlerFactory, params, dupes): void
+  use(fn: Koa.Middleware): void
+  static useGot(): void
+  static useRequest(): void
 }
 
 declare class Client {
@@ -208,4 +244,20 @@ declare class Client {
 
 declare class Adapter {
   static connect(provider: Provider): Promise<any>
+}
+
+declare class OIDCContext {
+  ctx: Koa.Context
+  route: string // ctx._matchedRoute
+  authorization: {}
+  redirectUriCheckPerformed: boolean
+  webMessageUriCheckPerformed: boolean
+  uuid: string // (ctx.params && ctx.params.grant) || uuid()
+  entities: {}
+  claims: {}
+  issuer: string // provider.issuer
+
+  entity(key, value): void // set entities
+  urlFor(name: string, opt: {}): string
+  promptPending(name: string)
 }
