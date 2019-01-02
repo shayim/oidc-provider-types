@@ -12,8 +12,17 @@ interface IConfiguration {
     short?: { secure?: boolean; signed?: boolean; httpOnly?: boolean; maxAge?: number }
     keys?: string[]
   }
-
-  dynamicScopes: string[]
+  discovery?: {
+    acr_values_supported?: string[] | number[]
+    claim_types_supported?: ('normal' | 'aggregated' | 'distributed')[]
+    claims_locales_supported?
+    display_values_supported?
+    op_policy_uri?
+    op_tos_uri?
+    service_documentation?
+    ui_locales_supported?
+  }
+  dynamicScopes?: string[]
   extraParams?: string[] | Set<string>
   features?: IConfigurationFeatures
   findById?: (
@@ -40,9 +49,9 @@ interface IConfiguration {
     RefreshToken?: 'opaque' | 'jwt' | Function
     Session?: 'opaque' | 'jwt' | Function
   }
-  interactionUrl(ctx, interaction): string
+  interactionUrl?(ctx, interaction): string
   prompts?: ('consent' | 'login' | 'none')[]
-  routes: {
+  routes?: {
     authorization?
     certificates?
     check_session?
@@ -55,29 +64,43 @@ interface IConfiguration {
     token?
     userinfo?
   }
-  scopes: ('openid' | 'offline_access')[]
+  scopes?: ('openid' | 'offline_access')[]
   subjectTypes?: ('public' | 'pairwise')[]
+  ttl: {
+    AccessToken?: number
+    AuthorizationCode?: number
+    ClientCredentials?: number
+    DeviceCode?: number
+    IdToken?: number
+    RefreshToken?: number
+  }
 }
 
 interface IConfigurationFeatures {
   alwaysIssueRefresh?: boolean
   backchannelLogout?: boolean
   certificateBoundAccessTokens?: boolean
+  claimsParameter?: boolean
+  clientCredentials?: boolean
+  conformIdTokenClaims?: boolean
   deviceFlow?: boolean | { charset?: 'base-20' | 'digits'; mask?: '-' | '*' | ' ' }
   devInteractions?: boolean
-  discovery?:
-    | boolean
-    | {
-        acr_values_supported?
-        claim_types_supported?: ('normal' | 'aggregated' | 'distributed')[]
-      }
+  discovery?: boolean
+  encryption?: boolean
+  frontchannelLogout?: boolean
   introspection?: boolean
   jwtIntrospection?: boolean
+  jwtResponseModes?: boolean
   oauthNativeApps?: boolean
   pkce?: boolean | { supportedMethods: ('plain' | 'S256')[] }
   registration?: boolean | { policies; initialAccessToken }
   registrationManagement?: boolean
-  requestUri?: boolean | { requireRequestUriRegistration: false }
+  requestUri?: boolean | { requireRequestUriRegistration: boolean }
+  resourceIndicators?: boolean
+  request?: boolean
+  revocation?: boolean
+  sessionManagement?: boolean
+  webMessageResponseMode?: boolean
 }
 
 interface IProvider {
@@ -131,6 +154,8 @@ interface IClient {
   redirect_uris: string[]
 
   application_type?: 'web' | 'native'
+  backchannel_logout_uri: string
+  backchannel_logout_session_required: boolean
   client_name?: string
   client_id: string
   client_secret: string
@@ -237,9 +262,38 @@ declare class Provider extends EventEmitter {
   static useRequest(): void
 }
 
+declare class BaseToken {
+  jti: string
+  kind: string // this.constructor.name
+  clientId: string
+  expiration: number
+
+  constructor(jti: string, kind: string, payload: {})
+  client: IClient
+  readonly isValid: boolean
+  readonly isExpired: boolean
+  readonly remainingTTL: number
+
+  save(): Promise<any>
+
+  static expiresIn(...args): number | undefined
+  static readonly IN_PAYLOAD: string[]
+}
+
+declare class IdToken {
+  available: {}
+  extra: {}
+  client: IClient
+
+  constructor(available: {}, client: IClient)
+  static expiresIn(...args): number | undefined
+}
+
 declare class Client {
-  static cacheClear(id?: string): void
   noManage: boolean
+
+  static cacheClear(id?: string): void
+  backchannelLogout(sub, sid)
 }
 
 declare class Adapter {

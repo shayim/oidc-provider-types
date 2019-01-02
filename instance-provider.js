@@ -629,7 +629,7 @@ const instanceOfProvider = {
       ],
       path: '/.well-known/webfinger',
       regexp: {
-        /*			/^\/\.well-known\/webfinger(?:\/(?=$))?$/i */
+        /* /^\/\.well-known\/webfinger(?:\/(?=$))?$/i */
         keys: []
       }
     },
@@ -700,7 +700,7 @@ const instanceOfProvider = {
       ],
       path: '/session/check',
       regexp: {
-        /*			/^\/session\/check(?:\/(?=$))?$/i */
+        /* /^\/session\/check(?:\/(?=$))?$/i */
         keys: []
       }
     },
