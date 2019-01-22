@@ -1,5 +1,6 @@
 export interface IConfiguration {
   acrValues?: string[];
+  audiences(ctx, sub, token, use): Promise<string[]>;
   claims?: { [key: string]: string[] | { [key: string]: null } }; // { amr?; address?; email?; phone?; profile? }
   clientCacheDuration?: number;
   clockTolerance?: number;
@@ -97,7 +98,7 @@ interface IConfigurationFeatures {
   conformIdTokenClaims?: boolean;
   deviceFlow?:
     | boolean
-    | { charset?: "base-20" | "digits"; mask?: "-" | "*" | " " };
+    | { charset?: "base-20" | "digits"; mask?: "-" | "*" | " "; deviceInfo };
   devInteractions?: boolean;
   discovery?: boolean;
   encryption?: boolean;
@@ -106,7 +107,9 @@ interface IConfigurationFeatures {
   jwtIntrospection?: boolean;
   jwtResponseModes?: boolean;
   oauthNativeApps?: boolean;
-  pkce?: boolean | { supportedMethods: ("plain" | "S256")[] };
+  pkce?:
+    | boolean
+    | { forcedForNative: boolean; supportedMethods: ("plain" | "S256")[] };
   registration?: boolean | { policies; initialAccessToken };
   registrationManagement?: boolean;
   requestUri?: boolean | { requireRequestUriRegistration: boolean };

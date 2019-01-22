@@ -1,4 +1,4 @@
-import { Provider } from "./provider";
+import { Provider } from "./index";
 import { IClient } from "./client";
 import { IOpaqueFormat, IJwtFormat } from "./format";
 import { IOidcSession } from "./oidcSession";

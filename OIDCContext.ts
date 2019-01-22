@@ -1,4 +1,8 @@
 import { Context } from "koa";
+import { IAuthorizationCode } from "./authorizationCode";
+import { IAccessToken } from "./accessToken";
+import { IRefreshToken } from "./refreshToken";
+import { IClient } from "./client";
 
 export declare class OIDCContext {
   // properties
@@ -8,15 +12,29 @@ export declare class OIDCContext {
   redirectUriCheckPerformed: boolean;
   webMessageUriCheckPerformed: boolean;
   uuid: string; // ctx.params.grant) || uuid()
-  entities: { AccessToken: { scope }; ClientCredentials; RefreshToken };
+  entities: {
+    Account?;
+    AccessToken?: IAccessToken;
+    AuthorizationCode?: IAuthorizationCode;
+    Client?: IClient;
+    ClientCredentials;
+    DeviceCode;
+    RefreshToken: IRefreshToken;
+    RotatedRefreshToken: IRefreshToken;
+    RegistrationAccessToken: { policies };
+  };
   claims: object;
   issuer: string; // provider.issuer
 
   // To find
-  client;
+  prompts: string; // ???? login
+  client: { requireAuthTime };
+  oidc: { body };
   params: {
-    scope;
+    acr_values: string;
+    scope: string;
     claims;
+    max_age;
     cliend_id;
     prompt;
     response_mode;
@@ -24,7 +42,7 @@ export declare class OIDCContext {
     web_message_uri;
     web_message_target;
   };
-  oidc: { body };
+  result;
   signed; // with an array of parameter names which were received using a signed or	encrypted request/Uri parameter
 
   // methods

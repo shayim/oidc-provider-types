@@ -1,12 +1,16 @@
 declare class Session {
-  id: string;
-  new: boolean;
+  id: string; // sid
+  new: boolean; // constructor data is null | undefined
   account: string;
   loginTs: number;
 
   oldId: string;
   touched: boolean;
   destroyed: boolean;
+
+  constructor(id: string, data: { account; loginTs });
+
+  // methods
 
   accountId(): string; // this.account
   authTime(): number; // this.loginTs

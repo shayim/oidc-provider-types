@@ -1,3 +1,25 @@
+export declare class CertBound {
+  static readonly IN_PAYLOAD: string[];
+  setS256Thumbprint(cert): void;
+}
+
+export declare interface ISetAudiences {
+  setAudiences(audiences: string[]);
+}
+
+export declare class Klass {
+  generateTokenId(): string;
+  getValueAndPayload(): Promise<[string, object]>;
+  static getTokenId(token: string): string;
+  static verify(
+    token: string,
+    stored: object,
+    opts: { ignoreExpiration: boolean; foundByUserCode: boolean }
+  );
+}
+
+export declare class BaseToken extends Klass {}
+
 export interface IOpaqueFormat {
   // for AccessToken, AuthorizationCode, RefreshToken, ClientCredentials, InitialAccessToken or RegistrationAccessToken
   jti?: string; // unique identifier of the token
@@ -27,18 +49,4 @@ export interface IOpaqueFormat {
 
 export interface IJwtFormat extends IOpaqueFormat {
   jwt?: string; // the jwt value returned to the client
-}
-
-export interface IInteractionResult {
-  login: {
-    account: string; // logged-in account id
-    acr: string; // acr value for the authentication
-    remember: boolean; // true if provider should use a persistent cookie rather than a session one
-    ts: number; // unix timestamp of the authentication
-  };
-  consent: {
-    rejectedScopes: string[]; // array of strings, scope names the end-user has not granted
-    rejectedClaims: string[]; // array of strings, claim names the end-user has not granted
-  };
-  meta: {};
 }
