@@ -88,7 +88,7 @@ declare class Provider extends EventEmitter {
       account: string;
       ts: number;
       remember: boolean;
-      clients: Provider.IClient[];
+      clients: Provider.Client[];
       meta: {};
     }
   ): Promise<Session>;
@@ -119,6 +119,10 @@ declare namespace Provider {
       rejectedClaims: string[]; // array of strings, claim names the end-user has not granted
     };
     meta: {};
+  }
+
+  interface Client {
+    keystore?; // !!! keystore.refresh() !!! keystore.get({alg, use})
   }
 
   interface ClientMetadata {
@@ -158,36 +162,80 @@ declare namespace Provider {
       | "none";
     tos_uri?: string;
     userinfo_signed_response_alg?: string;
+
+    // Conditional RECOGNIZED_METADATA
+
+    // configuration.(token|revocation|introspection)EndpointAuthMethods includes 'tls_client_auth'
+    tls_client_auth_subject_dn?: string;
+
+    // configuration.tokenEndpointAuthSigningAlgValues // ALWAYS TRUE
     token_endpoint_auth_signing_alg?: string;
 
-    tls_client_auth_subject_dn?: string; // (token|revocation|introspection)EndpointAuthMethods includes 'tls_client_auth'
-    introspection_endpoint_auth_method?: string; // features.introspection
-    introspection_endpoint_auth_signing_alg?;
+    // features.introspection
+    introspection_endpoint_auth_method?: string;
 
-    backchannel_logout_uri: string;
+    // features.introspection
+    // && configuration.introspectionEndpointAuthSigningAlgValues // ALWAYS TRUE
+    introspection_endpoint_auth_signing_alg?: string;
+
+    // features.introspection
+    // && configuration.features.jwtIntrospection
+    introspection_signed_response_alg?: string;
+
+    // features.introspection
+    // && features.jwtIntrospection
+    // && features.encryption
+    introspection_encrypted_response_alg?: string;
+    introspection_encrypted_response_enc?: string;
+
+    // features.revocation
+    revocation_endpoint_auth_method?: string;
+
+    // features.revocation
+    // && configuration.revocationEndpointAuthSigningAlgValues // ALWAYS TRUE
+    revocation_endpoint_auth_signing_alg?: string;
+
+    // features.sessionManagement || features.backchannelLogout || features.frontchannelLogout
+    post_logout_redirect_uris?: string;
+
+    // features.backchannelLogout
+    backchannel_logout_uri?: string;
     backchannel_logout_session_required?: boolean;
 
-    id_token_encrypted_response_alg?: string;
-    id_token_encrypted_response_enc?: string;
+    // features.frontchannelLogout
+    frontchannel_logout_uri?: string;
+    frontchannel_logout_session_required?: string;
+
+    // features.request || features.requestUri
+    request_object_signing_alg?: string;
+
+    // features.request || features.requestUri
+    // && features.encryption
     request_object_encryption_alg?: string;
     request_object_encryption_enc?: string;
-    request_object_signing_alg?: string;
-    request_uris: string[];
-    tls_client_certificate_bound_access_tokens: boolean;
 
+    // features.requestUri
+    request_uris?: string[];
+
+    // features.encryption
+    id_token_encrypted_response_alg?: string;
+    id_token_encrypted_response_enc?: string;
     userinfo_encrypted_response_alg?: string;
     userinfo_encrypted_response_enc?: string;
 
-    // TO FIND OUT
-    introspectionSignedResponseAlg?;
-    introspectionEncryptedResponseAlg?;
-    introspectionEncryptedResponseEnc?;
+    // features.jwtResponseModes
+    authorization_signed_response_alg?: string;
 
-    authorizationSignedResponseAlg?;
-    authorizationEncryptedResponseAlg?;
-    authorizationEncryptedResponseEnc?;
+    // features.jwtResponseModes
+    // && features.encryption
+    authorization_encrypted_response_alg?: string;
+    authorization_encrypted_response_enc?: string;
 
-    keystore?; // !!! keystore.refresh() !!! keystore.get({alg, use})
+    // features.webMessageResponseMode
+    web_message_uris?: string[];
+
+    // features.certificateBoundAccessTokens
+    tls_client_certificate_bound_access_tokens?: boolean;
   }
 }
 export = Provider;
