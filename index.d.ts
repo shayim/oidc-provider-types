@@ -586,7 +586,7 @@ interface IConfiguration {
   interactionCheck(ctx: Koa.Context): any;
   interactionUrl?(ctx, interaction): string;
   prompts?: ("consent" | "login" | "none")[];
-  refreshTokenRotation?:'none'| 'rotateAndConsume'
+  refreshTokenRotation?: "none" | "rotateAndConsume";
   routes?: {
     authorization?;
     certificates?;
@@ -683,7 +683,7 @@ declare class Provider extends EventEmitter {
 
   constructor(issuer: string, setup: IConfiguration);
 
-  intialize(setup: {
+  initialize(setup: {
     adapter?: IAdapter;
     clients?: ClientMetadata[];
     keystore?: any;

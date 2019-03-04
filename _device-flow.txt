@@ -1,0 +1,79 @@
+    +----------+                                +----------------+
+      |          |>---(A)-- Client Identifier --->|                |
+      |          |                                |                |
+      |          |<---(B)-- Verification Code, --<|                |
+      |          |              User Code,        |                |
+      |          |         & Verification URI     |                |
+      |  Device  |                                |                |
+      |  Client  |         Client Identifier &    |                |
+      |          |>---(E)-- Verification Code --->|                |
+      |          |    polling...                  |                |
+      |          |>---(E)-- Verification Code --->|                |
+      |          |                                |  Authorization |
+      |          |<---(F)-- Access Token --------<|     Server     |
+      +----------+  (w/ Optional Refresh Token)   |                |
+            v                                     |                |
+            :                                     |                |
+           (C) User Code & Verification URI       |                |
+            :                                     |                |
+            v                                     |                |
+      +----------+                                |                |
+      | End user |                                |                |
+      |    at    |<---(D)-- User authenticates -->|                |
+      |  Browser |                                |                |
+      +----------+                                +----------------+
+
+1. Device Authorization Request:
+   parameters: client_id (required), scope (optional)
+
+      POST /device_authorization HTTP/1.1
+      Host: server.example.com
+      Content-Type: application/x-www-form-urlencoded
+
+      client_id=459691054427
+
+2. Device Authorization Response:
+   Parameters: device_code (required), user_code (required), verification_uri (required) expires_in (required) verification_uri_complete (optional) interval (optional)
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+      Cache-Control: no-store
+
+      {
+        "device_code": "GmRhmhcxhwAzkoEqiMEg_DnyEysNkuNhszIySk9eS",
+        "user_code": "WDJB-MJHT",
+        "verification_uri": "https://example.com/device",
+        "verification_uri_complete":
+            "https://example.com/device?user_code=WDJB-MJHT",
+        "expires_in": 1800,
+        "interval": 5
+      }
+
+3. Use interaction
+       +-------------------------------------------------+
+                  |                                                 |
+                  |  Scan the QR code, or using     +------------+  |
+                  |  a browser on another device,   |[_]..  . [_]|  |
+                  |  visit:                         | .  ..   . .|  |
+                  |  https://example.com/device     | . .  . ....|  |
+                  |                                 |.   . . .   |  |
+                  |  And enter the code:            |[_]. ... .  |  |
+                  |  WDJB-MJHT                      +------------+  |
+                  |                                                 |
+                  +-------------------------------------------------+
+
+4. Device Access Token Request
+   Parameters:
+      grant_type (required, value = "urn:ietf:params:oauth:grant-type:device_code")
+      device_code (required)
+      client_id (required)
+
+      POST /token HTTP/1.1
+      Host: server.example.com
+      Content-Type: application/x-www-form-urlencoded
+
+      grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code
+      &device_code=GmRhmhcxhwAzkoEqiMEg_DnyEysNkuNhszIySk9eS
+      &client_id=459691054427
+
+5. Device Access Token Response

@@ -1,0 +1,287 @@
+1. Standard Request & Response flow
+
++--------+                                   +--------+
+|        |                                   |        |
+|        |---------(1) AuthN Request-------->|        |
+|        |                                   |        |
+|        |  +--------+                       |        |
+|        |  |        |                       |        |
+|        |  |  End-  |<--(2) AuthN & AuthZ-->|        |
+|        |  |  User  |                       |        |
+|   RP   |  |        |                       |   OP   |
+|        |  +--------+                       |        |
+|        |                                   |        |
+|        |<--------(3) AuthN Response--------|        |
+|        |                                   |        |
+|        |---------(4) UserInfo Request----->|        |
+|        |                                   |        |
+|        |<--------(5) UserInfo Response-----|        |
+|        |                                   |        |
++--------+                                   +--------+
+
+(1) The RP (Client) sends a request to the OpenID Provider (OP).
+(2) The OP authenticates the End-User and obtains authorization.
+(3) The OP responds with an ID Token and usually an Access Token.
+(4) The RP can send a request with the Access Token to the UserInfo Endpoint.
+(5) The UserInfo Endpoint returns Claims about the End-User.
+
+2. ID Token Claims
+
+* iss - URL using the https scheme, contains host and optionally port and path, !!!no query or fragment
+* sub - subject identifier
+* aud - client_id of RP, may also contains identifier for other audiences
+* exp
+* iat
+  auth_time - required When a max_age request is made or when auth_time is requested as an Essential Claim
+  nonce - a random value passed through unmodified from the Authentication Request to the ID Token, required for hybrid flow
+  acr - Authentication Context Class Reference value, case sensitive string.
+  amr - Authentication Methods References, an array of case sensitive strings
+  azp - client_id of Authorized party
+
+  at_hash - access token hash value, using base64url(left most half of octets of ASCII representation of hash(access token)), required when the Id token is issued from authorization endpoint with an access token which is the case for the response type value code id_token token
+
+  c_hash - code hash value, using base64url(left most half of octets of ASCII representation of hash(code)), required when the id token is issued from the authorization endpoint with a code which is the case for the response type value code id_token and code id_token token
+
+  standard Claims
+  * scope - profle: name, given_name, family_name, middle_name, nickname, preferred_username, profile, picture, website, zoneinfo, birthdate, gender, locale, updated_at
+  * scope - email: email, email_verified
+  * scope - phone: phone_number, phone_number_verified
+  * scope - address: address [formatted, street_address, locality, region, postal_code, country]
+
+  for self-issued openid provider response...
+
+
+ID Tokens must be signed, then optionally be encrypted
+
+3.
+
+response_type value	====> Flow
+------------------------------------------------------
+code 	              ====> Authorization Code Flow
+id_token 	          ====> Implicit Flow
+id_token token 	    ====> Implicit Flow
+code id_token 	    ====> Hybrid Flow
+code token 	        ====> Hybrid Flow
+code id_token token ====>	Hybrid Flow
+
+3.1 Authorization Code Flow
+    code returned from OP's authorization endpoint, all tokens are returned from OP's Token Endpoint
+
+    (1) RP submits an Authentication Request to OP
+
+        Request parameters
+        * scope: must contain openid, other scopes: profile, email, phone, address, offline_access
+        * response_type = code
+        * client_id
+        * redirect_uri
+        state: RECOMMENDED, typically cryptographically binding the value of this parameter with a browser cookie
+
+        response_mode
+        nonce
+        display: page | popup | touch | wap
+        prompt: none | login, consent, select_account
+        max_age
+        ui_locales
+        id_token_hint
+        login_hint
+        acr_values
+
+        claims_locales
+
+        claims: * Using the claims parameter is the only way to request Claims outside the standard set. It is also the only way to request specific combinations of the standard Claims that cannot be specified using scope values.
+
+        request
+
+        request_uri
+
+        example:
+
+        (redirect)
+        HTTP/1.1 302 Found
+        Location: https://server.example.com/authorize?
+          response_type=code
+          &scope=openid%20profile%20email
+          &client_id=s6BhdRkqt3
+          &state=af0ifjsldkj
+          &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
+
+          (authentication request)
+        GET /authorize?
+          response_type=code
+          &scope=openid%20profile%20email
+          &client_id=s6BhdRkqt3
+          &state=af0ifjsldkj
+          &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb HTTP/1.1
+          Host: server.example.com
+
+(2.1) Successful Authentication Response returned from the OP's Authorization Endpoint
+    * query parameters
+    * using the application/x-www-form-urlencoded format
+    (unless a different Response Mode was specified)
+
+    HTTP/1.1 302 Found
+      Location: https://client.example.org/cb?
+        code=SplxlOBeZQQYbYS6WxSbIA
+        &state=af0ifjsldkj
+
+(2.2) Authentication Error Response
+
+error response parameters:
+
+* error: invalid_request | unauthorized_client | unsupported_response_type | access_denied | invalid_scope | server_error | temporarily_unavailable| interaction_required | login_required | account_selection_required | consent_required | invalid_request_uri | invalid_request_object | request_not_supported | request_uri_not_supported | registration_not_supported
+
+error_description
+error_uri
+state
+
+  example:
+
+ HTTP/1.1 302 Found
+  Location: https://client.example.org/cb?
+    error=invalid_request
+    &error_description=Unsupported%20response_type%20value
+    &state=af0ifjsldkj
+
+(3) RP (Client) sends a Token Request to the Token Endpoint
+* POST method
+* Form Serialization
+
+POST /token HTTP/1.1
+  Host: server.example.com
+  Content-Type: application/x-www-form-urlencoded
+  Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
+
+  grant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA
+    &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
+
+(4.1) Successful Token Response includes an ID Token and an Access Token.
+* media type: application/json
+* parameters:
+  token_type = Bearer
+
+ HTTP/1.1 200 OK
+  Content-Type: application/json
+  Cache-Control: no-store
+  Pragma: no-cache
+
+  {
+   "access_token": "SlAV32hkKG",
+   "token_type": "Bearer",
+   "refresh_token": "8xLOxBtZp8",
+   "expires_in": 3600,
+   "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFlOWdkazcifQ.ewogImlzc
+     yI6ICJodHRwOi8vc2VydmVyLmV4YW1wbGUuY29tIiwKICJzdWIiOiAiMjQ4Mjg5
+     NzYxMDAxIiwKICJhdWQiOiAiczZCaGRSa3F0MyIsCiAibm9uY2UiOiAibi0wUzZ
+     fV3pBMk1qIiwKICJleHAiOiAxMzExMjgxOTcwLAogImlhdCI6IDEzMTEyODA5Nz
+     AKfQ.ggW8hZ1EuVLuxNuuIJKX_V8a_OMXzR0EHR9R6jgdqrOOF4daGU96Sr_P6q
+     Jp6IcmD3HP99Obi1PRs-cwh3LO-p146waJ8IhehcwL7F09JdijmBqkvPeB2T9CJ
+     NqeGpe-gccMg4vfKjkM8FcGvnzZUN4_KSP0aAp1tOJ1zZwgjxqGByKHiOtX7Tpd
+     QyHE5lcMiKPXfEIQILVq0pc_E2DzL7emopWoaoZTF_m0_N0YzFC6g6EJbOEoRoS
+     K5hoDalrcvRYLSrQAZZKflyuVCyixEoV9GfNQC3_osjzw2PAithfubEEBLuVVk4
+     XUVrWOLrLl0nx7RkKU8NXNHq-rvKMzqg"
+  }
+
+(4.2) Token Error Response
+
+
+3.2 Implicit Flow
+* all tokens are returned from the Authorization Endpoint; the Token Endpoint is not used.
+
+(1) Authentication Request
+Parameters
+* client_id
+* response_type: id_token | id_token token
+* redirect_uri: scheme must be https for application_type is web
+* scope
+* nonce
+state
+
+example:
+
+GET /authorize?
+    response_type=id_token%20token
+    &client_id=s6BhdRkqt3
+    &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
+    &scope=openid%20profile
+    &state=af0ifjsldkj
+    &nonce=n-0S6_WzA2Mj HTTP/1.1
+  Host: server.example.com
+
+(2.1) Successful Authentication Response
+* all response parameters are added to fragment component
+* no code result is returned when using the Implicit Flow
+   parameters:
+
+   * id_token
+   access_token
+   token_type = Bearer
+   state
+   expires_in
+
+HTTP/1.1 302 Found
+  Location: https://client.example.org/cb#
+    access_token=SlAV32hkKG
+    &token_type=bearer
+    &id_token=eyJ0 ... NiJ9.eyJ1c ... I6IjIifX0.DeWt4Qu ... ZXso
+    &expires_in=3600
+    &state=af0ifjsldkj
+
+(2.2) Authentication Error Response
+* return the error Authorization Response in the fragment component
+
+3.3 Hybrid Flow
+(1) Authentication Request
+
+Parameters:
+* client_id
+* redirect_uri
+* scope
+* response_type: code id_token | code id_token token  | code token
+state
+* nonce
+
+GET /authorize?
+    response_type=code%20id_token
+    &client_id=s6BhdRkqt3
+    &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
+    &scope=openid%20profile%20email
+    &nonce=n-0S6_WzA2Mj
+    &state=af0ifjsldkj HTTP/1.1
+  Host: server.example.com
+
+  (2.1) Successful Authentication Response
+  * all response parameters are added to fragment component
+
+  Parameters:
+  access_token: A token_type value = Bearer is also returned in the same cases and expires_in
+  id_token
+  code:  always returned when using the Hybrid Flow
+
+  example:
+  HTTP/1.1 302 Found
+  Location: https://client.example.org/cb#
+
+  #access_token=1940a308-d492-3660-a9f8-46723cc582e9
+  &code=55aa698d-ac3b-30ec-b4ca-f5e803590a4b&id_token=eyJ4NXQiOiJOVE...cYinNPEdrnCYyQ
+  &token_type=Bearer
+  &expires_in=297341
+  &state=iwoAA6ua4m5CRth0erWuxA
+
+4.  Initiating Login from a Third Party
+the login flow is initiated by an OpenID Provider or another party, rather than the Relying Party. In this case, the initiator redirects to the RP at its login initiation endpoint, which requests that the RP send an Authentication Request to a specified OP
+
+additional Authentication Request Parameters
+
+iss
+login_hint
+target_link_uri
+
+5. Claims
+
+(3)  UserInfo Endpoint
+
+GET /userinfo HTTP/1.1
+  Host: server.example.com
+  Authorization: Bearer SlAV32hkKG
+
+
